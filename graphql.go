@@ -36,6 +36,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 
@@ -132,6 +133,7 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 		return err
 	}
 	defer res.Body.Close()
+
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, res.Body); err != nil {
 		return errors.Wrap(err, "reading body")
@@ -143,6 +145,12 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 		}
 		return errors.Wrap(err, "decoding response")
 	}
+
+	log.Println("checking status code")
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("graphql: server returned a non-200 status code: %v", res.StatusCode)
+	}
+
 	if len(gr.Errors) > 0 {
 		// return first error
 		return gr.Errors[0]
